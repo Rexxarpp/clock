@@ -1,0 +1,81 @@
+C51 COMPILER V9.60.0.0   HC595                                                             11/29/2020 10:45:41 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE HC595
+OBJECT MODULE PLACED IN .\Objects\hc595.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE hc595.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\hc5
+                    -95.lst) OBJECT(.\Objects\hc595.obj)
+
+line level    source
+
+   1          #include "hc595.h"
+   2          
+   3          
+   4          void hc_595_init()
+   5          {
+   6   1              HC595_SH_CLK = 0;
+   7   1              HC595_ST_CLK = 0;
+   8   1      }
+   9          
+  10          //将移位寄存器中的数据存入存储寄存器以显示
+  11          void hc_595_stor_data()
+  12          {
+  13   1              HC595_ST_CLK = 1;
+  14   1              HC595_ST_CLK = 0;
+  15   1      }
+  16          
+  17          //向移位寄存器中写入1字节，不显示
+  18          
+  19          void hc_595_write_byte(unsigned char dat)
+  20          {
+  21   1              char i; //此处不能用unsigned char 否则循环不能停止。巨坑！！！！
+  22   1              for(i = 7; i >= 0; i--)
+  23   1              {
+  24   2                      HC595_DS = (dat >> i) & 0x01;
+  25   2                      HC595_SH_CLK = 0;
+  26   2                      HC595_SH_CLK = 1;               
+  27   2              }
+  28   1              /*
+  29   1              //视频中其他人的方法
+  30   1              for(i = 0; i < 8; i++)
+  31   1              {
+  32   1                      if(dat < 0x80)
+  33   1                      {
+  34   1                              HC595_DS = 0;
+  35   1                      }
+  36   1                      else
+  37   1                      {
+  38   1                              HC595_DS = 1;
+  39   1                      }
+  40   1                      HC595_SH_CLK = 1;
+  41   1                      HC595_SH_CLK = 0;
+  42   1                      
+  43   1                      dat <<= 1;
+  44   1                      
+  45   1              }
+  46   1      */
+  47   1      }
+  48          
+  49          //向移位寄存器中写入2字节，并显示
+  50          void hc_595_write_two_byte(unsigned char dat_h, unsigned char dat_l)
+  51          {
+  52   1              hc_595_write_byte(dat_h);
+  53   1              hc_595_write_byte(dat_l);
+  54   1              hc_595_stor_data();
+C51 COMPILER V9.60.0.0   HC595                                                             11/29/2020 10:45:41 PAGE 2   
+
+  55   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     55    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,177 @@
+C51 COMPILER V9.60.0.0   DS1302                                                            11/29/2020 10:45:42 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE DS1302
+OBJECT MODULE PLACED IN .\Objects\ds1302.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ds1302.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\ds
+                    -1302.lst) OBJECT(.\Objects\ds1302.obj)
+
+line level    source
+
+   1          #include "ds1302.h"
+   2          #include "spi.h"
+   3          #include "delay.h"
+   4          
+   5          // Ãë ·Ö Ê± ÈÕ ÔÂ ÖÜ Äê Ð´±£»¤  ³äµç
+   6          unsigned char code write_cmd[] = {0x80, 0x82, 0x84, 0x86, 0x88, 0x8A, 0x8C, 0x8E, 0x90};
+   7          //Ãë ·Ö Ê± ÈÕ ÔÂ ÖÜ Äê
+   8          unsigned char code read_cmd[] = {0x81, 0x83, 0x85, 0x87, 0x89, 0x8B, 0x8D};
+   9          
+  10          //Ð´ÈëramµÚÒ»×Ö½ÚÖÐµÄÊý¾Ý£¬ÓÃÀ´ÅÐ¶ÏÏµÍ³ÊÇ·ñµô¹ýµç
+  11          unsigned char code protect_code = 0x9D;
+  12          
+  13          //  Ãë ·Ö Ê± ÈÕ ÔÂ ÖÜ Äê Ð´±£»¤
+  14          //BCDÂë±íÊ¾ 2020-09-14 8:58:12 7
+  15          unsigned char time_buf[8] = {0x12, 0x58, 0x08, 0x14, 0x09, 0x07, 0x20, 0x80};
+  16          unsigned char time_buf1[8] = {0x00, 0x58, 0x08, 0x14, 0x09, 0x07, 0x20, 0x80}; //»ØÐ´ds1302Ê±ÓÃ£¬²»ÓÃÉÏÃæÄ
+             -Ç¸öÊÇ·ÀÖ¹»ØÐ´Ê±±»¶¨Ê±Æ÷¸ÄÐ´
+  17          
+  18          #define BURST_WRITE 0xBE
+  19          #define BURST_READ 0xBF
+  20          
+  21          extern unsigned char displayBuf[4];
+  22          
+  23          void ds1302_init()
+  24          {
+  25   1              unsigned char i = 0;
+  26   1              unsigned char read_protect_code;
+  27   1              read_protect_code = ds1302_read_byte(0xC1);//0xC1 ¶ÁÈ¡ramµÚÒ»×Ö½ÚÖÐµÄÊý¾ÝµÄÃüÁî
+  28   1              if(protect_code != read_protect_code)
+  29   1              {
+  30   2                      ds1302_write_byte(write_cmd[7], 0x00);//¹Ø±ÕÐ´±£»¤
+  31   2                      ds1302_write_byte(0xC0, protect_code);  //ÏòramµÚÒ»×Ö½ÚÖÐÐ´Èë±£»¤×Ö
+  32   2                      ds1302_write_byte(write_cmd[8], 0xA5);//³äµç£¬Ò»¸ö¶þ¼«¹Ü£¬2Kµç×è
+  33   2                      for (i = 0; i < 8; i++)
+  34   2                      {
+  35   3                              ds1302_write_byte(write_cmd[i], time_buf[i]); //×îºóÒ»´ÎÑ­»·´ò¿ªÐ´±£»¤
+  36   3                      }               
+  37   2              }
+  38   1      
+  39   1      }
+  40          
+  41          void ds1302_burst_init()
+  42          {
+  43   1              unsigned char read_protect_code;
+  44   1              read_protect_code = ds1302_read_byte(0xC1);//0xC1 ¶ÁÈ¡ramµÚÒ»×Ö½ÚÖÐµÄÊý¾ÝµÄÃüÁî
+  45   1              if(protect_code != read_protect_code)
+  46   1              {               
+  47   2                      ds1302_write_byte(write_cmd[7], 0x00);//¹Ø±ÕÐ´±£»¤
+  48   2                      ds1302_write_byte(0xC0, protect_code);  //ÏòramµÚÒ»×Ö½ÚÖÐÐ´Èë±£»¤×Ö
+  49   2                      ds1302_write_byte(write_cmd[8], 0xA5);//³äµç£¬0xAAÁ½¸ö¶þ¼«¹Ü£¬4Kµç×è    0xA5 Ò»¸ö¶þ¼«¹Ü£¬2Kµç×è
+  50   2                      ds1302_burst_write(time_buf); //³õÊ¼»¯Ê±¼ä
+  51   2              }       
+  52   1      }
+  53          
+C51 COMPILER V9.60.0.0   DS1302                                                            11/29/2020 10:45:42 PAGE 2   
+
+  54          
+  55          
+  56          
+  57          void ds1302_read(unsigned char* buf)
+  58          {
+  59   1              unsigned char i = 0;
+  60   1              for (; i < 7; i++)
+  61   1              {
+  62   2                      buf[i] = ds1302_read_byte(read_cmd[i]);
+  63   2              }
+  64   1      }
+  65          
+  66          void ds1302_write_byte(unsigned char cmd, unsigned char dat)
+  67          {
+  68   1              CE = 0;
+  69   1              SCLK = 0;
+  70   1              CE = 1;
+  71   1              spi_write_byte(cmd);
+  72   1              spi_write_byte(dat);
+  73   1              CE = 0;
+  74   1      }
+  75          
+  76          unsigned char ds1302_read_byte(unsigned char cmd)
+  77          {
+  78   1              unsigned char dat;
+  79   1              IO = 0;//Òª¼ÓÕâ¾ä£¬²»È»¶Á³öµÄÊý¾ÝÒ»´ÎÕý³££¬Ò»´Î²»Õý³££¬¶Á³ö0x7f,ÍøÉÏËµËûÃÇ¶Á³öoxff¡£
+  80   1              //https://bbs.csdn.net/topics/390207271
+  81   1              CE = 0;
+  82   1              SCLK = 0;
+  83   1              CE = 1;
+  84   1              spi_write_byte(cmd);
+  85   1              dat = spi_read_byte();
+  86   1              CE = 0;
+  87   1      
+  88   1              return dat;
+  89   1      }
+  90          
+  91          //burstÄ£Ê½£¬Ò»´ÎÐÔÐ´Èë8×Ö½Ú£¬ÃüÁîÊÇ0xBE. buf[7]±ØÐëÊÇ0x80£¬ÒÔ´ò¿ªÐ´±£»¤
+  92          //´Ëº¯Êý²»»á¹Ø±ÕÐ´±£»¤£¬µ«»á´ò¿ªÐ´±£»¤£¬ÔÚµ÷ÓÃ´Ëº¯ÊýÇ°ÐèÒªÊÖ¶¯¹Ø±ÕÐ´±£»¤
+  93          void ds1302_burst_write(unsigned char* buf)
+  94          {
+  95   1              unsigned char i = 0;
+  96   1              CE = 0;
+  97   1              SCLK = 0;
+  98   1              CE = 1;
+  99   1              spi_write_byte(BURST_WRITE);//burstÐ´ÃüÁî
+ 100   1              for(; i < 8; i++)
+ 101   1              {
+ 102   2                      spi_write_byte(buf[i]); //×îºóÒ»´ÎÑ­»·´ò¿ªÐ´±£»¤
+ 103   2              }
+ 104   1              CE = 0;
+ 105   1      }
+ 106          
+ 107          
+ 108          
+ 109          void ds1302_burst_read(unsigned char* buf)
+ 110          {
+ 111   1              unsigned char i = 0;
+ 112   1              CE = 0;
+ 113   1              SCLK = 0;
+ 114   1              CE = 1;
+ 115   1              spi_write_byte(BURST_READ);//burst¶ÁÃüÁî
+C51 COMPILER V9.60.0.0   DS1302                                                            11/29/2020 10:45:42 PAGE 3   
+
+ 116   1              for(; i < 8; i++)
+ 117   1              {
+ 118   2                      buf[i] = spi_read_byte();
+ 119   2              }
+ 120   1              CE = 0;
+ 121   1              IO = 0;//Òª¼ÓÕâ¾ä£¬²»È»¶Á³öµÄÊý¾ÝÒ»´ÎÕý³££¬Ò»´Î²»Õý³££¬¶Á³ö0x7f,ÍøÉÏËµËûÃÇ¶Á³öoxff¡£
+ 122   1      }
+ 123          
+ 124          
+ 125          unsigned char read1302(unsigned char add)
+ 126          {
+ 127   1              unsigned char i, dat, dat1;
+ 128   1              SCLK = 0;
+ 129   1              CE = 0;
+ 130   1              CE = 1;
+ 131   1              for(i = 0; i < 8; i++)
+ 132   1              {
+ 133   2                      IO = add&0x01;
+ 134   2                      add>>=1;
+ 135   2                      SCLK = 1;
+ 136   2                      SCLK = 0;
+ 137   2              }
+ 138   1              for(i = 0; i < 8; i++)
+ 139   1              {
+ 140   2                      dat1 = IO;
+ 141   2                      dat = (dat>>1)|(dat1<<7);
+ 142   2                      SCLK = 1;
+ 143   2                      SCLK = 0;
+ 144   2              }
+ 145   1              CE = 0;
+ 146   1              IO = 0;
+ 147   1              return dat;
+ 148   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    412    ----
+   CONSTANT SIZE    =     17    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     16      14
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

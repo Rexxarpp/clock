@@ -1,0 +1,9 @@
+".\Objects\main.obj",
+".\Objects\hc595.obj",
+".\Objects\delay.obj",
+".\Objects\display.obj",
+".\Objects\key.obj",
+".\Objects\spi.obj",
+".\Objects\ds1302.obj" 
+TO ".\Objects\clock" 
+PRINT(".\Listings\clock.m51") RAMSIZE(256) 

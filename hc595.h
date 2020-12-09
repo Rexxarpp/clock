@@ -6,6 +6,7 @@ sbit HC595_SH_CLK = P2^7; //"移位时钟"
 sbit HC595_ST_CLK = P2^6; //“存储时钟”
 sbit HC595_DS = P2^5; //“数据线”
 
+void hc_595_setPin(sbit sh_clk, sbit st_clk, ds);
 //初始化
 void hc_595_init();
 

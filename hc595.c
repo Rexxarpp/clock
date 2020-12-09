@@ -1,6 +1,13 @@
 #include "hc595.h"
 
 
+void hc_595_setPin(sbit sh_clk, sbit st_clk, ds)
+{
+	HC595_SH_CLK = sh_clk; //"移位时钟"
+	HC595_ST_CLK = st_clk; //“存储时钟”
+	HC595_DS = ds; //“数据线”
+}
+
 void hc_595_init()
 {
 	HC595_SH_CLK = 0;

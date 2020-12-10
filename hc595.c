@@ -1,7 +1,7 @@
 #include "hc595.h"
 
 
-void hc_595_setPin(sbit sh_clk, sbit st_clk, ds)
+void hc_595_setPin(bit sh_clk, bit st_clk, bit ds)
 {
 	HC595_SH_CLK = sh_clk; //"“∆Œª ±÷”"
 	HC595_ST_CLK = st_clk; //°∞¥Ê¥¢ ±÷”°±

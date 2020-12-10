@@ -3,7 +3,7 @@
 #include "delay.h"
 
 
-//hc505 控制2803 NPN型达林顿管驱动 共阳极数码管 高电平选中
+//hc595 控制2803 NPN型达林顿管驱动 共阳极数码管 高电平选中
 //数码管段码与595引脚关系如下：
 //段码-----------595引脚---字节中的位置
 // A----------------QC---------3
@@ -38,7 +38,7 @@ unsigned char code seg_code[] =
 //   S3------QE---------5
 //   S4------QD---------4
 //s8550pnp型三极管，低电平为选中
-unsigned char code place_code[] = {0xBF, 0xDF, 0xEF, 0xF7};//S1, S2, S3, S4 时钟冒号的位选与S2相同
+unsigned char code place_code[] = {0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD};//S1, S2, S3, S4, S5, S6
 
 unsigned char displayBuf[] = {1, 2, 4, 5};
 
@@ -62,17 +62,16 @@ unsigned char code seg_code1[] =
 	{0xF7, 0xC1, 0xEE, 0xEB, 0xD9, 0xBB, 0xBF, 0xE1, 0xFF, 0xFB, 0xFD, 0x9F, 0xB6, 0xCF, 0xBE, 0xBC};
 	//0,1,2,3,4,5,6,7,8,9,A,b,C,d,E,F 所有都带时钟冒号
 	
-//s8550pnp型三极管，低电平为选中
-unsigned char code place_code1[] = {0xBF, 0xDF, 0xEF, 0xF7};//S1, S2, S3, S4, S5, S6
 
 //参数not_display_place表示不显示的位，传0、1、2、3分别不显示1、2、3、4位。如果全部显示，传4好了
 void display(unsigned char not_display_place)
 {
+	static unsigned char i = 0;
+	hc_595_setPin(P2^7, P2^6, P2^5);
 	//1、送位选
 	//2、送段码
 	//3、延时
-	//4、消隐：将所有段位关闭
-	static unsigned char i = 0;
+	//4、消隐：将所有段位关闭	
 	if(i != not_display_place)
 	{
 		hc_595_write_two_byte(0x00, 0xff);//4、消隐：将所有段位关闭 先做消隐，再显示。这样字符显示的时间长，亮度高
@@ -85,20 +84,23 @@ void display(unsigned char not_display_place)
 	}
 
 	i++;
-	i = i%4;
+	i %= 4;
 //	delay_xms(1);//定时器中调用不用延时
 }
 
 void display_timer()
 {
-	//TODO set the right pin
-	hc_595_setPin(P2^7, P2^6, P2^5);
 	static unsigned char j = 0;
-	hc_595_write_two_byte(0x00, 0xff);
-	hc_595_write_two_byte(seg_code[displayBuf1[j]], place_code1[j]);
 	
 	//TODO set the right pin
 	hc_595_setPin(P2^7, P2^6, P2^5);
 	hc_595_write_two_byte(0x00, 0xff);
-	hc_595_write_two_byte(seg_code[displayBuf2[j]], place_code1[j]);
+	hc_595_write_two_byte(seg_code[displayBuf1[j]], place_code[j]);
+	
+	//TODO set the right pin
+	hc_595_setPin(P2^7, P2^6, P2^5);
+	hc_595_write_two_byte(0x00, 0xff);
+	hc_595_write_two_byte(seg_code[displayBuf2[j]], place_code[j]);
+	j++;
+	j %= 6;
 }

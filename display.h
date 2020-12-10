@@ -2,5 +2,5 @@
 #define __DISPLAY_H__
 
 void display(unsigned char not_display_place);
-
+void display_timer();
 #endif

@@ -24,8 +24,16 @@ void key_process();
 
 void main()
 {
-	
+	//TODO set the right pin
+	hc_595_setPin(P2^7, P2^6, P2^5);
 	hc_595_init();
+	//TODO set the right pin
+	hc_595_setPin(P2^7, P2^6, P2^5);
+	hc_595_init();
+	//TODO set the right pin
+	hc_595_setPin(P2^7, P2^6, P2^5);
+	hc_595_init();
+	
 	TimerInit();
 //	ds1302_init();
 	ds1302_burst_init();
@@ -171,7 +179,8 @@ void timer1_ISR(void) interrupt 3 //interrupt 3ÎªT1ÖÐ¶Ï
 		
 		a = 1;
 	}
-	display(not_disp_place);	
+	display(not_disp_place);
+	display_timer();	
 }
 
 

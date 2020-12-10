@@ -24,14 +24,11 @@ void key_process();
 
 void main()
 {
-	//TODO set the right pin
 	hc_595_setPin(P2^7, P2^6, P2^5);
 	hc_595_init();
-	//TODO set the right pin
-	hc_595_setPin(P2^7, P2^6, P2^5);
+	hc_595_setPin(P1^3, P1^1, P1^4);//×ó±ß
 	hc_595_init();
-	//TODO set the right pin
-	hc_595_setPin(P2^7, P2^6, P2^5);
+	hc_595_setPin(P2^2, P2^1, P2^0);//ÓÒ±ß
 	hc_595_init();
 	
 	TimerInit();

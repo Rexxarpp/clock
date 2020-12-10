@@ -10,5 +10,8 @@
 sbit set_key = P1^0;
 sbit adj_key = P3^6;
 
+sbit l_key = P1^2;//左边定时器的按键
+sbit r_key = P3^5;//右边定时器的按键
+
 unsigned char key_scan();
 #endif

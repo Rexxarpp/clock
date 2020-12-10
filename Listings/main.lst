@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 10:44:33 PAGE 1   
+C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 15:19:29 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
@@ -34,266 +34,263 @@ line level    source
   24          
   25          void main()
   26          {
-  27   1              //TODO set the right pin
-  28   1              hc_595_setPin(P2^7, P2^6, P2^5);
-  29   1              hc_595_init();
-  30   1              //TODO set the right pin
-  31   1              hc_595_setPin(P2^7, P2^6, P2^5);
+  27   1              hc_595_setPin(P2^7, P2^6, P2^5);
+  28   1              hc_595_init();
+  29   1              hc_595_setPin(P1^3, P1^1, P1^4);//左边
+  30   1              hc_595_init();
+  31   1              hc_595_setPin(P2^2, P2^1, P2^0);//右边
   32   1              hc_595_init();
-  33   1              //TODO set the right pin
-  34   1              hc_595_setPin(P2^7, P2^6, P2^5);
-  35   1              hc_595_init();
-  36   1              
-  37   1              TimerInit();
-  38   1      //      ds1302_init();
-  39   1              ds1302_burst_init();
-  40   1      //      ds1302_burst_read(time_buf);//先读一次
-  41   1      
-  42   1      //      Timer0Init();
-  43   1              while(1)
-  44   1              {
-  45   2                      key_process();
-  46   2                      if(time_need_read)
-  47   2                      {
-  48   3      //                      ds1302_read(time_buf);//普通方式读整个buf,不包括写保护位
-  49   3      //                      ds1302_burst_read(time_buf);//burst方式读取整个buf ,包括写保护位
-  50   3                              time_buf[1] = ds1302_read_byte(0x83);//普通方式读分
-  51   3                              time_buf[2] = ds1302_read_byte(0x85);//普通方式读时
-  52   3                              
-  53   3                              
-  54   3                              time_format(time_buf, displayBuf);
-C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 10:44:33 PAGE 2   
+  33   1              
+  34   1              TimerInit();
+  35   1      //      ds1302_init();
+  36   1              ds1302_burst_init();
+  37   1      //      ds1302_burst_read(time_buf);//先读一次
+  38   1      
+  39   1      //      Timer0Init();
+  40   1              while(1)
+  41   1              {
+  42   2                      key_process();
+  43   2                      if(time_need_read)
+  44   2                      {
+  45   3      //                      ds1302_read(time_buf);//普通方式读整个buf,不包括写保护位
+  46   3      //                      ds1302_burst_read(time_buf);//burst方式读取整个buf ,包括写保护位
+  47   3                              time_buf[1] = ds1302_read_byte(0x83);//普通方式读分
+  48   3                              time_buf[2] = ds1302_read_byte(0x85);//普通方式读时
+  49   3                              
+  50   3                              
+  51   3                              time_format(time_buf, displayBuf);
+  52   3                              time_need_read = 0;
+  53   3                      }
+  54   2              }
+C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 15:19:29 PAGE 2   
 
-  55   3                              time_need_read = 0;
-  56   3                      }
-  57   2              }
-  58   1              
-  59   1      }
-  60          void time_format(unsigned char* src, unsigned char* dest) //把BCD码的时间转换成显示的时间,放入dest中
-  61          {
-  62   1              dest[0] = src[2] >> 4;
-  63   1              dest[1] = (dest[1] &0x10) | (src[2] & 0x0F);
-  64   1              dest[2] = src[1] >> 4;
-  65   1              dest[3] = src[1] & 0x0f;
-  66   1      }
-  67          
-  68          void time_format_reverse(unsigned char* src, unsigned char* dest)//把显示的时间转换成BCD码的时间, 放入dest
+  55   1              
+  56   1      }
+  57          void time_format(unsigned char* src, unsigned char* dest) //把BCD码的时间转换成显示的时间,放入dest中
+  58          {
+  59   1              dest[0] = src[2] >> 4;
+  60   1              dest[1] = (dest[1] &0x10) | (src[2] & 0x0F);
+  61   1              dest[2] = src[1] >> 4;
+  62   1              dest[3] = src[1] & 0x0f;
+  63   1      }
+  64          
+  65          void time_format_reverse(unsigned char* src, unsigned char* dest)//把显示的时间转换成BCD码的时间, 放入dest
              -中
-  69          {
-  70   1              dest[2] = (src[0]<<4) | (src[1] & 0x0F);
-  71   1              dest[1] = (src[2]<<4) | (src[3] & 0x0F);
-  72   1      }
-  73          
-  74          
-  75          void TimerInit(void)            //1毫秒@12.000MHz
-  76          {
-  77   1      //      AUXR &= 0xBF;           //定时器时钟12T模式
-  78   1              TMOD &= 0x0F;           //设置定时器模式
-  79   1              TMOD |= 0x10;           //设置定时器模式
-  80   1              TL1 = 0x18;             //设置定时初值
-  81   1              TH1 = 0xFC;             //设置定时初值
-  82   1              TF1 = 0;                //清除TF1标志
-  83   1              
-  84   1              ET1 = 1;  //定时计数器1溢出中断允许控制位
-  85   1              EA = 1;
-  86   1              TR1 = 1;                //定时器1开始计时
-  87   1      }
-  88          
-  89          //void Timer0Init(void)         //3毫秒@12.000MHz
-  90          //{
-  91          ////    AUXR &= 0x7F;           //定时器时钟12T模式
-  92          //      TMOD &= 0xF0;           //设置定时器模式
-  93          //      TMOD |= 0x01;           //设置定时器模式
-  94          //      TL0 = 0x48;             //设置定时初值
-  95          //      TH0 = 0xF4;             //设置定时初值
-  96          //      TF0 = 0;                //清除TF0标志
-  97          //      
-  98          //      ET0 = 1;  //定时计数器1溢出中断允许控制位
-  99          //      EA = 1;
- 100          //      TR0 = 1;                //定时器0开始计时
- 101          //}
- 102          
- 103          
- 104          
- 105          void timer1_ISR(void) interrupt 3 //interrupt 3为T1中断
- 106          {
- 107   1              static unsigned int a = 1;
- 108   1              TL1 = 0x18;             //设置定时初值 1毫秒@12.000MHz
- 109   1              TH1 = 0xFC;             //设置定时初值
- 110   1      
- 111   1              if( a%8 == 0)
- 112   1              {
- 113   2                      key_need_scan = 1;
- 114   2              }
- 115   1              if((sys_state == SYS_NORMAL))
-C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 10:44:33 PAGE 3   
+  66          {
+  67   1              dest[2] = (src[0]<<4) | (src[1] & 0x0F);
+  68   1              dest[1] = (src[2]<<4) | (src[3] & 0x0F);
+  69   1      }
+  70          
+  71          
+  72          void TimerInit(void)            //1毫秒@12.000MHz
+  73          {
+  74   1      //      AUXR &= 0xBF;           //定时器时钟12T模式
+  75   1              TMOD &= 0x0F;           //设置定时器模式
+  76   1              TMOD |= 0x10;           //设置定时器模式
+  77   1              TL1 = 0x18;             //设置定时初值
+  78   1              TH1 = 0xFC;             //设置定时初值
+  79   1              TF1 = 0;                //清除TF1标志
+  80   1              
+  81   1              ET1 = 1;  //定时计数器1溢出中断允许控制位
+  82   1              EA = 1;
+  83   1              TR1 = 1;                //定时器1开始计时
+  84   1      }
+  85          
+  86          //void Timer0Init(void)         //3毫秒@12.000MHz
+  87          //{
+  88          ////    AUXR &= 0x7F;           //定时器时钟12T模式
+  89          //      TMOD &= 0xF0;           //设置定时器模式
+  90          //      TMOD |= 0x01;           //设置定时器模式
+  91          //      TL0 = 0x48;             //设置定时初值
+  92          //      TH0 = 0xF4;             //设置定时初值
+  93          //      TF0 = 0;                //清除TF0标志
+  94          //      
+  95          //      ET0 = 1;  //定时计数器1溢出中断允许控制位
+  96          //      EA = 1;
+  97          //      TR0 = 1;                //定时器0开始计时
+  98          //}
+  99          
+ 100          
+ 101          
+ 102          void timer1_ISR(void) interrupt 3 //interrupt 3为T1中断
+ 103          {
+ 104   1              static unsigned int a = 1;
+ 105   1              TL1 = 0x18;             //设置定时初值 1毫秒@12.000MHz
+ 106   1              TH1 = 0xFC;             //设置定时初值
+ 107   1      
+ 108   1              if( a%8 == 0)
+ 109   1              {
+ 110   2                      key_need_scan = 1;
+ 111   2              }
+ 112   1              if((sys_state == SYS_NORMAL))
+ 113   1              {
+ 114   2                      if(a%20 == 0)
+ 115   2                      {
+C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 15:19:29 PAGE 3   
 
- 116   1              {
- 117   2                      if(a%20 == 0)
- 118   2                      {
- 119   3                              time_need_read = 1;
- 120   3                      }               
- 121   2              }
- 122   1              if (a++ == 500)   //长定时的方法
- 123   1              {
- 124   2                      switch(sys_state)
- 125   2                      {
- 126   3                              case SYS_NORMAL:
- 127   3                                      not_disp_place = 4;
- 128   3                                      displayBuf[1] ^= 0x10;
- 129   3                                      break;
- 130   3                              
- 131   3                              case SYS_SET_1:
- 132   3                                      if (not_disp_place !=0)
- 133   3                                      {
- 134   4                                              not_disp_place = 0;
- 135   4                                      }
- 136   3                                      else
- 137   3                                      {
- 138   4                                              not_disp_place = 4;
- 139   4                                      }
- 140   3                                      break;
- 141   3                                      
- 142   3                              case SYS_SET_2:
- 143   3                                      displayBuf[1] &= 0x0f;
- 144   3                                      if (not_disp_place !=1)
- 145   3                                      {
- 146   4                                              not_disp_place = 1;
- 147   4                                      }
- 148   3                                      else
- 149   3                                      {
- 150   4                                              not_disp_place = 4;
- 151   4                                      }
- 152   3                                      break;
- 153   3                                      
- 154   3                              case SYS_SET_3:
- 155   3                                      if (not_disp_place !=2)
- 156   3                                      {
- 157   4                                              not_disp_place = 2;
- 158   4                                      }
- 159   3                                      else
- 160   3                                      {
- 161   4                                              not_disp_place = 4;
- 162   4                                      }
- 163   3                                      break;
- 164   3                                      
- 165   3                              case SYS_SET_4:
- 166   3                                      if (not_disp_place !=3)
- 167   3                                      {
- 168   4                                              not_disp_place = 3;
- 169   4                                      }
- 170   3                                      else
- 171   3                                      {
- 172   4                                              not_disp_place = 4;
- 173   4                                      }
+ 116   3                              time_need_read = 1;
+ 117   3                      }               
+ 118   2              }
+ 119   1              if (a++ == 500)   //长定时的方法
+ 120   1              {
+ 121   2                      switch(sys_state)
+ 122   2                      {
+ 123   3                              case SYS_NORMAL:
+ 124   3                                      not_disp_place = 4;
+ 125   3                                      displayBuf[1] ^= 0x10;
+ 126   3                                      break;
+ 127   3                              
+ 128   3                              case SYS_SET_1:
+ 129   3                                      if (not_disp_place !=0)
+ 130   3                                      {
+ 131   4                                              not_disp_place = 0;
+ 132   4                                      }
+ 133   3                                      else
+ 134   3                                      {
+ 135   4                                              not_disp_place = 4;
+ 136   4                                      }
+ 137   3                                      break;
+ 138   3                                      
+ 139   3                              case SYS_SET_2:
+ 140   3                                      displayBuf[1] &= 0x0f;
+ 141   3                                      if (not_disp_place !=1)
+ 142   3                                      {
+ 143   4                                              not_disp_place = 1;
+ 144   4                                      }
+ 145   3                                      else
+ 146   3                                      {
+ 147   4                                              not_disp_place = 4;
+ 148   4                                      }
+ 149   3                                      break;
+ 150   3                                      
+ 151   3                              case SYS_SET_3:
+ 152   3                                      if (not_disp_place !=2)
+ 153   3                                      {
+ 154   4                                              not_disp_place = 2;
+ 155   4                                      }
+ 156   3                                      else
+ 157   3                                      {
+ 158   4                                              not_disp_place = 4;
+ 159   4                                      }
+ 160   3                                      break;
+ 161   3                                      
+ 162   3                              case SYS_SET_4:
+ 163   3                                      if (not_disp_place !=3)
+ 164   3                                      {
+ 165   4                                              not_disp_place = 3;
+ 166   4                                      }
+ 167   3                                      else
+ 168   3                                      {
+ 169   4                                              not_disp_place = 4;
+ 170   4                                      }
+ 171   3                                      break;
+ 172   3                                      
+ 173   3                              default:
  174   3                                      break;
- 175   3                                      
- 176   3                              default:
- 177   3                                      break;
-C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 10:44:33 PAGE 4   
+ 175   3                      }
+ 176   2                      
+ 177   2                      a = 1;
+C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 15:19:29 PAGE 4   
 
- 178   3                      }
- 179   2                      
- 180   2                      a = 1;
- 181   2              }
- 182   1              display(not_disp_place);
- 183   1              display_timer();        
- 184   1      }
- 185          
- 186          
- 187          //void timer0_ISR(void) interrupt 1 //interrupt 1为T0中断
- 188          //{
- 189          //      static unsigned char b = 0;
- 190          //      TR0 = 0;
- 191          //      TL0 = 0x48;             //设置定时器初值 3毫秒@12.000MHz
- 192          //      TH0 = 0xF4;    //设置定时器初值 3毫秒@12.000MHz
- 193          //      key_need_scan = 1; //3毫秒扫描一次按键
- 194          //      if(b++ == 20) //100毫秒读取一次ds1302时间
- 195          //      {
- 196          //              time_need_read = 1;
- 197          //              b=0;
- 198          //      }
- 199          //      TR0 = 1;
+ 178   2              }
+ 179   1              display(not_disp_place);
+ 180   1              display_timer();        
+ 181   1      }
+ 182          
+ 183          
+ 184          //void timer0_ISR(void) interrupt 1 //interrupt 1为T0中断
+ 185          //{
+ 186          //      static unsigned char b = 0;
+ 187          //      TR0 = 0;
+ 188          //      TL0 = 0x48;             //设置定时器初值 3毫秒@12.000MHz
+ 189          //      TH0 = 0xF4;    //设置定时器初值 3毫秒@12.000MHz
+ 190          //      key_need_scan = 1; //3毫秒扫描一次按键
+ 191          //      if(b++ == 20) //100毫秒读取一次ds1302时间
+ 192          //      {
+ 193          //              time_need_read = 1;
+ 194          //              b=0;
+ 195          //      }
+ 196          //      TR0 = 1;
+ 197          
+ 198          //}     
+ 199                  
  200          
- 201          //}     
- 202                  
- 203          
- 204          void key_process()
- 205          {
- 206   1              if(key_need_scan == 1)
- 207   1              {
- 208   2                      key_state = key_scan();
- 209   2                      switch(key_state)
- 210   2                      {
- 211   3                              case KEY_SET_PRESSED:
- 212   3                                      if(sys_state == SYS_SET_4)
- 213   3                                      {
- 214   4                                              sys_state = SYS_NORMAL;
- 215   4                                              //将设置的时间数据回写ds1302
- 216   4                                              time_format_reverse(displayBuf, time_buf1);
- 217   4                                              ds1302_write_byte(0x8E, 0x00);  //关闭写保护
- 218   4                                              ds1302_burst_write(time_buf1);                                  
- 219   4                                      }
- 220   3                                      else if(sys_state == SYS_SET_1)
- 221   3                                      {
- 222   4                                              sys_state++;
- 223   4                                              if(displayBuf[0] == 2)
- 224   4                                              {
- 225   5                                                      if((displayBuf[1] | 0x0F) > 3)
- 226   5                                                      {
- 227   6                                                              displayBuf[1] = 0;
- 228   6                                                      }
- 229   5                                              }       
- 230   4                                      }
- 231   3                                      else
- 232   3                                      {
- 233   4                                              sys_state++;
- 234   4                                      }
- 235   3                                      break;
- 236   3                              case KEY_ADJ_PRESSED:
- 237   3                                      switch(sys_state)
- 238   3                                      {
- 239   4                                              case SYS_SET_1:
-C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 10:44:33 PAGE 5   
+ 201          void key_process()
+ 202          {
+ 203   1              if(key_need_scan == 1)
+ 204   1              {
+ 205   2                      key_state = key_scan();
+ 206   2                      switch(key_state)
+ 207   2                      {
+ 208   3                              case KEY_SET_PRESSED:
+ 209   3                                      if(sys_state == SYS_SET_4)
+ 210   3                                      {
+ 211   4                                              sys_state = SYS_NORMAL;
+ 212   4                                              //将设置的时间数据回写ds1302
+ 213   4                                              time_format_reverse(displayBuf, time_buf1);
+ 214   4                                              ds1302_write_byte(0x8E, 0x00);  //关闭写保护
+ 215   4                                              ds1302_burst_write(time_buf1);                                  
+ 216   4                                      }
+ 217   3                                      else if(sys_state == SYS_SET_1)
+ 218   3                                      {
+ 219   4                                              sys_state++;
+ 220   4                                              if(displayBuf[0] == 2)
+ 221   4                                              {
+ 222   5                                                      if((displayBuf[1] | 0x0F) > 3)
+ 223   5                                                      {
+ 224   6                                                              displayBuf[1] = 0;
+ 225   6                                                      }
+ 226   5                                              }       
+ 227   4                                      }
+ 228   3                                      else
+ 229   3                                      {
+ 230   4                                              sys_state++;
+ 231   4                                      }
+ 232   3                                      break;
+ 233   3                              case KEY_ADJ_PRESSED:
+ 234   3                                      switch(sys_state)
+ 235   3                                      {
+ 236   4                                              case SYS_SET_1:
+ 237   4                                                      displayBuf[0]++;
+ 238   4                                                      displayBuf[0] %= 3;
+ 239   4                                                      break;
+C51 COMPILER V9.60.0.0   MAIN                                                              12/10/2020 15:19:29 PAGE 5   
 
- 240   4                                                      displayBuf[0]++;
- 241   4                                                      displayBuf[0] %= 3;
- 242   4                                                      break;
- 243   4                                              case SYS_SET_2:
- 244   4                                                      displayBuf[1] &= 0x0f;
- 245   4                                                      displayBuf[1]++;
- 246   4                                                      if (displayBuf[0] == 2)
- 247   4                                                      {
- 248   5                                                              displayBuf[1] %= 4;
- 249   5                                                      }
- 250   4                                                      else
- 251   4                                                      {
- 252   5                                                              displayBuf[1] %= 10;
- 253   5                                                      }
- 254   4                                                      break;
- 255   4                                              case SYS_SET_3:
- 256   4                                                      displayBuf[2]++;
- 257   4                                                      displayBuf[2] %= 6;
- 258   4                                                      break;
- 259   4                                              case SYS_SET_4:
- 260   4                                                      displayBuf[3]++;
- 261   4                                                      displayBuf[3] %= 10;
- 262   4                                                      break;
- 263   4                                              default:
- 264   4                                                      break;
- 265   4                                      }
- 266   3                                      break;
- 267   3                                      default:
- 268   3                                      break;
- 269   3                              }
- 270   2                              key_need_scan = 0;
- 271   2                      }
- 272   1      }
- 273          
+ 240   4                                              case SYS_SET_2:
+ 241   4                                                      displayBuf[1] &= 0x0f;
+ 242   4                                                      displayBuf[1]++;
+ 243   4                                                      if (displayBuf[0] == 2)
+ 244   4                                                      {
+ 245   5                                                              displayBuf[1] %= 4;
+ 246   5                                                      }
+ 247   4                                                      else
+ 248   4                                                      {
+ 249   5                                                              displayBuf[1] %= 10;
+ 250   5                                                      }
+ 251   4                                                      break;
+ 252   4                                              case SYS_SET_3:
+ 253   4                                                      displayBuf[2]++;
+ 254   4                                                      displayBuf[2] %= 6;
+ 255   4                                                      break;
+ 256   4                                              case SYS_SET_4:
+ 257   4                                                      displayBuf[3]++;
+ 258   4                                                      displayBuf[3] %= 10;
+ 259   4                                                      break;
+ 260   4                                              default:
+ 261   4                                                      break;
+ 262   4                                      }
+ 263   3                                      break;
+ 264   3                                      default:
+ 265   3                                      break;
+ 266   3                              }
+ 267   2                              key_need_scan = 0;
+ 268   2                      }
+ 269   1      }
+ 270          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    737    ----
+   CODE SIZE        =    735    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----

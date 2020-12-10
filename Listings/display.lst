@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   DISPLAY                                                           12/10/2020 10:44:34 PAGE 1   
+C51 COMPILER V9.60.0.0   DISPLAY                                                           12/10/2020 15:19:29 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE DISPLAY
@@ -62,7 +62,7 @@ line level    source
   50          //¶ÎÂë-----------595Òý½Å---×Ö½ÚÖÐµÄÎ»ÖÃ
   51          // A----------------QF---------6
   52          // B----------------QG---------7
-C51 COMPILER V9.60.0.0   DISPLAY                                                           12/10/2020 10:44:34 PAGE 2   
+C51 COMPILER V9.60.0.0   DISPLAY                                                           12/10/2020 15:19:29 PAGE 2   
 
   53          // C----------------QA---------1
   54          // D----------------QB---------2
@@ -108,27 +108,26 @@ line level    source
   92          {
   93   1              static unsigned char j = 0;
   94   1              
-  95   1              //TODO set the right pin
-  96   1              hc_595_setPin(P2^7, P2^6, P2^5);
-  97   1              hc_595_write_two_byte(0x00, 0xff);
-  98   1              hc_595_write_two_byte(seg_code[displayBuf1[j]], place_code[j]);
+  95   1              hc_595_setPin(P1^3, P1^1, P1^4);//×ó±ß
+  96   1              hc_595_write_two_byte(0x00, 0xff);
+  97   1              hc_595_write_two_byte(seg_code[displayBuf1[j]], place_code[j]);
+  98   1              
   99   1              
- 100   1              //TODO set the right pin
- 101   1              hc_595_setPin(P2^7, P2^6, P2^5);
- 102   1              hc_595_write_two_byte(0x00, 0xff);
- 103   1              hc_595_write_two_byte(seg_code[displayBuf2[j]], place_code[j]);
- 104   1              j++;
- 105   1              j %= 6;
- 106   1      }
+ 100   1              hc_595_setPin(P2^2, P2^1, P2^0);//ÓÒ±ß
+ 101   1              hc_595_write_two_byte(0x00, 0xff);
+ 102   1              hc_595_write_two_byte(seg_code[displayBuf2[j]], place_code[j]);
+ 103   1              j++;
+ 104   1              j %= 6;
+ 105   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    206    ----
+   CODE SIZE        =    204    ----
    CONSTANT SIZE    =     54    ----
    XDATA SIZE       =   ----    ----
-C51 COMPILER V9.60.0.0   DISPLAY                                                           12/10/2020 10:44:34 PAGE 3   
-
    PDATA SIZE       =   ----    ----
+C51 COMPILER V9.60.0.0   DISPLAY                                                           12/10/2020 15:19:29 PAGE 3   
+
    DATA SIZE        =     18       1
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----

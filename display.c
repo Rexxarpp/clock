@@ -92,13 +92,12 @@ void display_timer()
 {
 	static unsigned char j = 0;
 	
-	//TODO set the right pin
-	hc_595_setPin(P2^7, P2^6, P2^5);
+	hc_595_setPin(P1^3, P1^1, P1^4);//×ó±ß
 	hc_595_write_two_byte(0x00, 0xff);
 	hc_595_write_two_byte(seg_code[displayBuf1[j]], place_code[j]);
 	
-	//TODO set the right pin
-	hc_595_setPin(P2^7, P2^6, P2^5);
+	
+	hc_595_setPin(P2^2, P2^1, P2^0);//ÓÒ±ß
 	hc_595_write_two_byte(0x00, 0xff);
 	hc_595_write_two_byte(seg_code[displayBuf2[j]], place_code[j]);
 	j++;

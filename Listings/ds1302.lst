@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   DS1302                                                            12/10/2020 10:44:34 PAGE 1   
+C51 COMPILER V9.60.0.0   DS1302                                                            12/10/2020 15:19:29 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE DS1302
@@ -62,7 +62,7 @@ line level    source
   51   2              }       
   52   1      }
   53          
-C51 COMPILER V9.60.0.0   DS1302                                                            12/10/2020 10:44:34 PAGE 2   
+C51 COMPILER V9.60.0.0   DS1302                                                            12/10/2020 15:19:29 PAGE 2   
 
   54          
   55          
@@ -126,7 +126,7 @@ line level    source
  113   1              SCLK = 0;
  114   1              CE = 1;
  115   1              spi_write_byte(BURST_READ);//burst∂¡√¸¡Ó
-C51 COMPILER V9.60.0.0   DS1302                                                            12/10/2020 10:44:34 PAGE 3   
+C51 COMPILER V9.60.0.0   DS1302                                                            12/10/2020 15:19:29 PAGE 3   
 
  116   1              for(; i < 8; i++)
  117   1              {

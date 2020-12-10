@@ -26,7 +26,7 @@
 //    =      =
 //    ===D====  DP
 
-unsigned char code seg_code1[] = 
+unsigned char code seg_code[] = 
 	{0x7E, 0x48, 0x3D, 0x6D, 0x4B, 0x67, 0x77, 0x4C, 0x7F, 0x6F,  0x5F, 0x73, 0x36, 0x79, 0x37, 0x17, //0,1,2,3,4,5,6,7,8,9,A,b,C,d,E,F
      0xFE, 0xC8, 0xBD, 0xED, 0xCB, 0xE7, 0xF7, 0xCC, 0xFF, 0xEF,  0xDF, 0xF3, 0xB6, 0xF9, 0xB7, 0x97};//带时钟冒号的0～9
 
@@ -80,12 +80,25 @@ void display(unsigned char not_display_place)
 	}
 	else
 	{
-		hc_595_write_two_byte(0x00, 0xff);//4、消隐：将所有段位关闭 先做消隐，再显示。这样字符显示的时间长，亮度高
+//		hc_595_write_two_byte(0x00, 0xff);//4、消隐：将所有段位关闭 先做消隐，再显示。这样字符显示的时间长，亮度高
 		hc_595_write_two_byte(seg_code[displayBuf[i]], 0xff);
 	}
 
 	i++;
 	i = i%4;
 //	delay_xms(1);//定时器中调用不用延时
+}
 
+void display_timer()
+{
+	//TODO set the right pin
+	hc_595_setPin(P2^7, P2^6, P2^5);
+	static unsigned char j = 0;
+	hc_595_write_two_byte(0x00, 0xff);
+	hc_595_write_two_byte(seg_code[displayBuf1[j]], place_code1[j]);
+	
+	//TODO set the right pin
+	hc_595_setPin(P2^7, P2^6, P2^5);
+	hc_595_write_two_byte(0x00, 0xff);
+	hc_595_write_two_byte(seg_code[displayBuf2[j]], place_code1[j]);
 }

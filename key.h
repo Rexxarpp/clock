@@ -6,6 +6,8 @@
 #define KEY_NORMAL 0
 #define KEY_SET_PRESSED 1
 #define KEY_ADJ_PRESSED 2
+#define KEY_TIMER_L_PRESSED 3
+#define KEY_TIMER_R_PRESSED 4
 
 sbit set_key = P1^0;
 sbit adj_key = P3^6;

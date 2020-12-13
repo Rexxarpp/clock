@@ -5,13 +5,24 @@
 #include "delay.h"
 #include "ds1302.h"
 
-enum STATE{SYS_NORMAL = 0, SYS_SET_1 = 1, SYS_SET_2 = 2, SYS_SET_3 = 3, SYS_SET_4 = 4};
+typedef enum {SYS_NORMAL = 0, SYS_SET_1 = 1, SYS_SET_2 = 2, SYS_SET_3 = 3, SYS_SET_4 = 4} STATE;
+typedef enum {TIMER_CLEARED = 0, TIMER_BEGIN = 1, TIMER_STOP = 2} TIMER_STATE;
+
 extern unsigned char displayBuf[4];
+extern unsigned char displayBuf1[6];
+extern unsigned char displayBuf2[6];
 extern unsigned char code seg_code[32];
 extern unsigned char time_buf[8];
 extern unsigned char time_buf1[8];
 unsigned char key_state = KEY_NORMAL;
-enum STATE sys_state = SYS_NORMAL;
+STATE sys_state = SYS_NORMAL;
+
+unsigned char last_second_l = 0;//…œ¥Œ∂¡≥ˆ¿¥µƒ√Î
+unsigned char last_second_r = 0;//…œ¥Œ∂¡≥ˆ¿¥µƒ√Î
+
+TIMER_STATE time_state_l = TIMER_CLEARED;//◊Û±ﬂ∂® ±∆˜◊¥Ã¨
+TIMER_STATE time_state_r = TIMER_CLEARED;//”“±ﬂ∂® ±∆˜◊¥Ã¨
+
 unsigned char key_need_scan = 0;//  «∑ÒµΩ¥Ô£®∂® ±∆˜…Ë∂®µƒ£©…®√Ë∞¥º¸ µƒ ±º‰
 unsigned char time_need_read = 0;// «∑ÒµΩ¥Ô£®∂® ±∆˜…Ë∂®µƒ£©∂¡»°ds1302 ˝æ› µƒ ±º‰
 unsigned char not_disp_place = 4;
@@ -19,16 +30,13 @@ unsigned char not_disp_place = 4;
 void TimerInit(void);
 void Timer0Init(void);	
 void time_format(unsigned char* src, unsigned char* dest);
+void increas_disp_buff(char* disp_buf);
 
 void key_process();
+void clear_buf(unsigned char* buf, char n);
 
 void main()
 {
-	hc_595_setPin(P2^7, P2^6, P2^5);
-	hc_595_init();
-	hc_595_setPin(P1^3, P1^1, P1^4);//◊Û±ﬂ
-	hc_595_init();
-	hc_595_setPin(P2^2, P2^1, P2^0);//”“±ﬂ
 	hc_595_init();
 	
 	TimerInit();
@@ -44,15 +52,69 @@ void main()
 		{
 //			ds1302_read(time_buf);//∆’Õ®∑Ω Ω∂¡’˚∏ˆbuf,≤ª∞¸¿®–¥±£ª§Œª
 //			ds1302_burst_read(time_buf);//burst∑Ω Ω∂¡»°’˚∏ˆbuf ,∞¸¿®–¥±£ª§Œª
+			time_buf[0] = ds1302_read_byte(0x81);//∆’Õ®∑Ω Ω∂¡√Î
 			time_buf[1] = ds1302_read_byte(0x83);//∆’Õ®∑Ω Ω∂¡∑÷
 			time_buf[2] = ds1302_read_byte(0x85);//∆’Õ®∑Ω Ω∂¡ ±
 			
-			
 			time_format(time_buf, displayBuf);
+			
+//			displayBuf1[0] = time_buf[0] &0x0F; //≤‚ ‘”√
+			if(time_state_l == TIMER_BEGIN)
+			{
+				if(last_second_l != time_buf[0])
+				{
+					last_second_l = time_buf[0];
+					increas_disp_buff(displayBuf1);
+				}
+			}
+			if(time_state_r == TIMER_BEGIN)
+			{
+				if(last_second_r != time_buf[0])
+				{
+					last_second_r = time_buf[0];
+					increas_disp_buff(displayBuf2);
+				}
+				
+			}
 			time_need_read = 0;
 		}
 	}
 	
+}
+
+void increas_disp_buff(char* disp_buf)
+{
+	disp_buf[5]++;
+	if(disp_buf[5] == 10)
+	{
+		disp_buf[5] = 0;
+		disp_buf[4]++;
+		if(disp_buf[4] == 6)
+		{
+			disp_buf[4] = 0;
+			disp_buf[3]++;
+			if(disp_buf[3] == 10)
+			{
+				disp_buf[3] = 0;
+				disp_buf[2] ++;
+				if(disp_buf[2] == 6)
+				{
+					disp_buf[2] = 0;
+					disp_buf[1]++;
+					if(disp_buf[1] == 10)
+					{
+						disp_buf[1] = 0;
+						disp_buf[0]++;
+						if(disp_buf[0] == 10)
+						{
+							disp_buf[0] = 0;
+						}
+					}
+					
+				}
+			}
+		}
+	}
 }
 void time_format(unsigned char* src, unsigned char* dest) //∞—BCD¬Îµƒ ±º‰◊™ªª≥…œ‘ æµƒ ±º‰,∑≈»Îdest÷–
 {
@@ -69,13 +131,13 @@ void time_format_reverse(unsigned char* src, unsigned char* dest)//∞—œ‘ æµƒ ±º‰◊
 }
 
 
-void TimerInit(void)		//1∫¡√Î@12.000MHz
+void TimerInit(void)		//3~4∫¡√Î÷Æº‰@12.000MHz
 {
 //	AUXR &= 0xBF;		//∂® ±∆˜ ±÷”12Tƒ£ Ω
 	TMOD &= 0x0F;		//…Ë÷√∂® ±∆˜ƒ£ Ω
 	TMOD |= 0x10;		//…Ë÷√∂® ±∆˜ƒ£ Ω
-	TL1 = 0x18;		//…Ë÷√∂® ±≥ı÷µ
-	TH1 = 0xFC;		//…Ë÷√∂® ±≥ı÷µ
+	TL1 = 0x9a;		//…Ë÷√∂® ±≥ı÷µ
+	TH1 = 0xF3;		//…Ë÷√∂® ±≥ı÷µ
 	TF1 = 0;		//«Â≥˝TF1±Í÷æ
 	
 	ET1 = 1;  //∂® ±º∆ ˝∆˜1“Á≥ˆ÷–∂œ‘ –Ìøÿ÷∆Œª
@@ -102,21 +164,21 @@ void TimerInit(void)		//1∫¡√Î@12.000MHz
 void timer1_ISR(void) interrupt 3 //interrupt 3Œ™T1÷–∂œ
 {
 	static unsigned int a = 1;
-	TL1 = 0x18;		//…Ë÷√∂® ±≥ı÷µ 1∫¡√Î@12.000MHz
-	TH1 = 0xFC;		//…Ë÷√∂® ±≥ı÷µ
+	TL1 = 0x9a;		//…Ë÷√∂® ±≥ı÷µ 2∫¡√Î@12.000MHz
+	TH1 = 0xF3;		//…Ë÷√∂® ±≥ı÷µ
 
-	if( a%8 == 0)
+	if( a%20 == 0)
 	{
 		key_need_scan = 1;
 	}
 	if((sys_state == SYS_NORMAL))
 	{
-		if(a%20 == 0)
+		if(a%25 == 0)
 		{
 			time_need_read = 1;
 		}		
 	}
-	if (a++ == 500)   //≥§∂® ±µƒ∑Ω∑®
+	if (a++ == 160)   //…¡À∏
 	{
 		switch(sys_state)
 		{
@@ -261,6 +323,39 @@ void key_process()
 						break;
 				}
 				break;
+				
+			case KEY_TIMER_L_PRESSED:
+				switch(time_state_l)
+				{
+					case TIMER_CLEARED:
+						time_state_l = TIMER_BEGIN;
+						
+						break;
+					case TIMER_BEGIN:
+						time_state_l = TIMER_STOP;
+						break;
+					case TIMER_STOP:
+						time_state_l = TIMER_CLEARED;
+						clear_buf(displayBuf1, 6);
+						break;
+					default:
+						break;
+				}
+				break;
+			case KEY_TIMER_R_PRESSED:
+				switch(time_state_r)
+				{
+					case TIMER_CLEARED:
+						break;
+					case TIMER_BEGIN:
+						break;
+					case TIMER_STOP:
+						clear_buf(displayBuf2, 6);
+						break;
+					default:
+						break;
+				}				
+				break;
 				default:
 				break;
 			}
@@ -268,3 +363,11 @@ void key_process()
 		}
 }
 
+void clear_buf(unsigned char* buf, char n)
+{
+	unsigned char i = 0;
+	for(; i!=n; i++)
+	{
+		buf[i] = 0;
+	}
+}

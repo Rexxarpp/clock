@@ -67,7 +67,6 @@ unsigned char code seg_code1[] =
 void display(unsigned char not_display_place)
 {
 	static unsigned char i = 0;
-	hc_595_setPin(P2^7, P2^6, P2^5);
 	//1、送位选
 	//2、送段码
 	//3、延时
@@ -79,7 +78,7 @@ void display(unsigned char not_display_place)
 	}
 	else
 	{
-//		hc_595_write_two_byte(0x00, 0xff);//4、消隐：将所有段位关闭 先做消隐，再显示。这样字符显示的时间长，亮度高
+		hc_595_write_two_byte(0x00, 0xff);//4、消隐：将所有段位关闭 先做消隐，再显示。这样字符显示的时间长，亮度高
 		hc_595_write_two_byte(seg_code[displayBuf[i]], 0xff);
 	}
 
@@ -91,15 +90,13 @@ void display(unsigned char not_display_place)
 void display_timer()
 {
 	static unsigned char j = 0;
+		
+//	hc_595_write_two_byte_L(0x00, 0xff);
+	hc_595_write_two_byte_L(seg_code1[displayBuf1[j]], place_code[j]);
 	
-	hc_595_setPin(P1^3, P1^1, P1^4);//左边
-	hc_595_write_two_byte(0x00, 0xff);
-	hc_595_write_two_byte(seg_code[displayBuf1[j]], place_code[j]);
-	
-	
-	hc_595_setPin(P2^2, P2^1, P2^0);//右边
-	hc_595_write_two_byte(0x00, 0xff);
-	hc_595_write_two_byte(seg_code[displayBuf2[j]], place_code[j]);
+//	hc_595_write_two_byte_R(0x00, 0xff);
+	hc_595_write_two_byte_R(seg_code1[displayBuf1[j]], place_code[j]);
+
 	j++;
 	j %= 6;
 }

@@ -24,5 +24,29 @@ unsigned char key_scan()
 		}
 		
 	}
+	
+	else if(0 == l_key)
+	{
+//		delay_xms();
+		if(0 == l_key)
+		{
+			return_value = KEY_TIMER_L_PRESSED;
+			while(!l_key);
+		}
+		
+	}
+	
+	else if(0 == r_key)
+	{
+//		delay_xms();
+		if(0 == r_key)
+		{
+			return_value = KEY_TIMER_R_PRESSED;
+			while(!r_key);
+		}
+		
+	}
+	
+	
 	return return_value;
 }

@@ -6,7 +6,7 @@ void delay_xms(void)		//@12.000MHz  xms<=127!!
 {
 	unsigned char i, j;
 
-	i = 9;
+	i = 1;
 	j = 239;
 	do
 	{

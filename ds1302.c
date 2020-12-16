@@ -8,7 +8,8 @@ unsigned char code write_cmd[] = {0x80, 0x82, 0x84, 0x86, 0x88, 0x8A, 0x8C, 0x8E
 unsigned char code read_cmd[] = {0x81, 0x83, 0x85, 0x87, 0x89, 0x8B, 0x8D};
 
 //写入ram第一字节中的数据，用来判断系统是否掉过电
-unsigned char code protect_code = 0x9D;
+unsigned char code protect_code[] = {0x9D, 0x4C, 0x70, 0xF0, 0x7C};
+unsigned char protect_code_len = 5;
 
 //  秒 分 时 日 月 周 年 写保护
 //BCD码表示 2020-09-14 8:58:12 7
@@ -17,37 +18,56 @@ unsigned char time_buf1[8] = {0x00, 0x58, 0x08, 0x14, 0x09, 0x07, 0x20, 0x80}; /
 
 #define BURST_WRITE 0xBE
 #define BURST_READ 0xBF
+#define BURST_WRITE_RAM 0xFE
+#define BURST_READ_RAM 0xFF
 
 extern unsigned char displayBuf[4];
 
+unsigned char check_protect_code(unsigned char* buf1, unsigned char* buf2, unsigned char len)
+{
+	unsigned char i = 0;
+	for(; i<len; i++)
+	{
+		if(buf1[i] != buf2[i])
+		{
+			return 0;
+		}
+	}
+	return 1;
+}	
 void ds1302_init()
 {
 	unsigned char i = 0;
-	unsigned char read_protect_code;
-	read_protect_code = ds1302_read_byte(0xC1);//0xC1 读取ram第一字节中的数据的命令
-	if(protect_code != read_protect_code)
-	{
-		ds1302_write_byte(write_cmd[7], 0x00);//关闭写保护
-		ds1302_write_byte(0xC0, protect_code);	//向ram第一字节中写入保护字
-		ds1302_write_byte(write_cmd[8], 0xA5);//充电，一个二极管，2K电阻
-		for (i = 0; i < 8; i++)
+	unsigned char read_protect_code[5];
+	ds1302_write_byte(write_cmd[7], 0x00);//关闭写保护
+	ds1302_write_byte(write_cmd[8], 0xA5);//充电，一个二极管，2K电阻
+	ds1302_burst_read_ram(read_protect_code, protect_code_len);//0xC1 读取ram第中的数据的命令
+	if(!check_protect_code(protect_code, read_protect_code, protect_code_len))
+	{		
+		ds1302_burst_write_ram(protect_code, protect_code_len);	//向ram中写入保护字
+		for (i = 0; i < 7; i++)
 		{
-			ds1302_write_byte(write_cmd[i], time_buf[i]); //最后一次循环打开写保护
+			ds1302_write_byte(write_cmd[i], time_buf[i]);
 		}		
 	}
+	ds1302_write_byte(write_cmd[7], time_buf[7]);//打开写保护
 
 }
 
 void ds1302_burst_init()
 {
-	unsigned char read_protect_code;
-	read_protect_code = ds1302_read_byte(0xC1);//0xC1 读取ram第一字节中的数据的命令
-	if(protect_code != read_protect_code)
+	unsigned char read_protect_code[5];
+	ds1302_write_byte(write_cmd[7], 0x00);//关闭写保护
+	ds1302_write_byte(write_cmd[8], 0xA5);//充电，0xAA两个二极管，4K电阻	0xA5 一个二极管，2K电阻
+	ds1302_burst_read_ram(read_protect_code, protect_code_len);////0xC1 读取ram中的保护字
+	if(!check_protect_code(protect_code, read_protect_code, protect_code_len))
 	{		
-		ds1302_write_byte(write_cmd[7], 0x00);//关闭写保护
-		ds1302_write_byte(0xC0, protect_code);	//向ram第一字节中写入保护字
-		ds1302_write_byte(write_cmd[8], 0xA5);//充电，0xAA两个二极管，4K电阻	0xA5 一个二极管，2K电阻
+		ds1302_burst_write_ram(protect_code, protect_code_len);	//向ram中写入保护字
 		ds1302_burst_write(time_buf); //初始化时间
+	}
+	else
+	{
+		ds1302_write_byte(write_cmd[7], time_buf[7]);//打开写保护
 	}	
 }
 
@@ -114,6 +134,36 @@ void ds1302_burst_read(unsigned char* buf)
 	CE = 1;
 	spi_write_byte(BURST_READ);//burst读命令
 	for(; i < 8; i++)
+	{
+		buf[i] = spi_read_byte();
+	}
+	CE = 0;
+	IO = 0;//要加这句，不然读出的数据一次正常，一次不正常，读出0x7f,网上说他们读出oxff。
+}
+
+void ds1302_burst_write_ram(unsigned char* buf, unsigned char write_len)
+{
+	unsigned char i = 0;
+	CE = 0;
+	SCLK = 0;
+	CE = 1;
+	spi_write_byte(BURST_WRITE_RAM);//burst ram写命令
+	for(; i < write_len; i++)
+	{
+		spi_write_byte(buf[i]); //最后一次循环打开写保护
+	}
+	CE = 0;
+}
+
+void ds1302_burst_read_ram(unsigned char* buf, unsigned char read_len)
+{
+	unsigned char i = 0;
+	IO = 0;//要加这句，不然读出的数据一次正常，一次不正常，读出0x7f,网上说他们读出oxff。
+	CE = 0;
+	SCLK = 0;
+	CE = 1;
+	spi_write_byte(BURST_READ_RAM);//burst ram读命令
+	for(; i < read_len; i++)
 	{
 		buf[i] = spi_read_byte();
 	}

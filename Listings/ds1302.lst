@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   DS1302                                                            12/13/2020 19:12:21 PAGE 1   
+C51 COMPILER V9.60.0.0   DS1302                                                            12/16/2020 21:49:36 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE DS1302
@@ -18,157 +18,209 @@ line level    source
    8          unsigned char code read_cmd[] = {0x81, 0x83, 0x85, 0x87, 0x89, 0x8B, 0x8D};
    9          
   10          //写入ram第一字节中的数据，用来判断系统是否掉过电
-  11          unsigned char code protect_code = 0x9D;
-  12          
-  13          //  秒 分 时 日 月 周 年 写保护
-  14          //BCD码表示 2020-09-14 8:58:12 7
-  15          unsigned char time_buf[8] = {0x12, 0x58, 0x08, 0x14, 0x09, 0x07, 0x20, 0x80};
-  16          unsigned char time_buf1[8] = {0x00, 0x58, 0x08, 0x14, 0x09, 0x07, 0x20, 0x80}; //时间修改完成后，回写ds130
+  11          unsigned char code protect_code[] = {0x9D, 0x4C, 0x70, 0xF0, 0x7C};
+  12          unsigned char protect_code_len = 5;
+  13          
+  14          //  秒 分 时 日 月 周 年 写保护
+  15          //BCD码表示 2020-09-14 8:58:12 7
+  16          unsigned char time_buf[8] = {0x12, 0x58, 0x08, 0x14, 0x09, 0x07, 0x20, 0x80};
+  17          unsigned char time_buf1[8] = {0x00, 0x58, 0x08, 0x14, 0x09, 0x07, 0x20, 0x80}; //时间修改完成后，回写ds130
              -2时用，不用上面那个是防止回写时被定时器改写
-  17          
-  18          #define BURST_WRITE 0xBE
-  19          #define BURST_READ 0xBF
-  20          
-  21          extern unsigned char displayBuf[4];
-  22          
-  23          void ds1302_init()
-  24          {
-  25   1              unsigned char i = 0;
-  26   1              unsigned char read_protect_code;
-  27   1              read_protect_code = ds1302_read_byte(0xC1);//0xC1 读取ram第一字节中的数据的命令
-  28   1              if(protect_code != read_protect_code)
-  29   1              {
-  30   2                      ds1302_write_byte(write_cmd[7], 0x00);//关闭写保护
-  31   2                      ds1302_write_byte(0xC0, protect_code);  //向ram第一字节中写入保护字
-  32   2                      ds1302_write_byte(write_cmd[8], 0xA5);//充电，一个二极管，2K电阻
-  33   2                      for (i = 0; i < 8; i++)
-  34   2                      {
-  35   3                              ds1302_write_byte(write_cmd[i], time_buf[i]); //最后一次循环打开写保护
-  36   3                      }               
-  37   2              }
-  38   1      
-  39   1      }
-  40          
-  41          void ds1302_burst_init()
-  42          {
-  43   1              unsigned char read_protect_code;
-  44   1              read_protect_code = ds1302_read_byte(0xC1);//0xC1 读取ram第一字节中的数据的命令
-  45   1              if(protect_code != read_protect_code)
+  18          
+  19          #define BURST_WRITE 0xBE
+  20          #define BURST_READ 0xBF
+  21          #define BURST_WRITE_RAM 0xFE
+  22          #define BURST_READ_RAM 0xFF
+  23          
+  24          extern unsigned char displayBuf[4];
+  25          
+  26          unsigned char check_protect_code(unsigned char* buf1, unsigned char* buf2, unsigned char len)
+  27          {
+  28   1              unsigned char i = 0;
+  29   1              for(; i<len; i++)
+  30   1              {
+  31   2                      if(buf1[i] != buf2[i])
+  32   2                      {
+  33   3                              return 0;
+  34   3                      }
+  35   2              }
+  36   1              return 1;
+  37   1      }       
+  38          void ds1302_init()
+  39          {
+  40   1              unsigned char i = 0;
+  41   1              unsigned char read_protect_code[5];
+  42   1              ds1302_write_byte(write_cmd[7], 0x00);//关闭写保护
+  43   1              ds1302_write_byte(write_cmd[8], 0xA5);//充电，一个二极管，2K电阻
+  44   1              ds1302_burst_read_ram(read_protect_code, protect_code_len);//0xC1 读取ram第中的数据的命令
+  45   1              if(!check_protect_code(protect_code, read_protect_code, protect_code_len))
   46   1              {               
-  47   2                      ds1302_write_byte(write_cmd[7], 0x00);//关闭写保护
-  48   2                      ds1302_write_byte(0xC0, protect_code);  //向ram第一字节中写入保护字
-  49   2                      ds1302_write_byte(write_cmd[8], 0xA5);//充电，0xAA两个二极管，4K电阻    0xA5 一个二极管，2K电阻
-  50   2                      ds1302_burst_write(time_buf); //初始化时间
-  51   2              }       
-  52   1      }
-  53          
-C51 COMPILER V9.60.0.0   DS1302                                                            12/13/2020 19:12:21 PAGE 2   
+  47   2                      ds1302_burst_write_ram(protect_code, protect_code_len); //向ram中写入保护字
+  48   2                      for (i = 0; i < 7; i++)
+  49   2                      {
+  50   3                              ds1302_write_byte(write_cmd[i], time_buf[i]);
+  51   3                      }               
+  52   2              }
+  53   1              ds1302_write_byte(write_cmd[7], time_buf[7]);//打开写保护
+C51 COMPILER V9.60.0.0   DS1302                                                            12/16/2020 21:49:36 PAGE 2   
 
-  54          
-  55          
+  54   1      
+  55   1      }
   56          
-  57          void ds1302_read(unsigned char* buf)
+  57          void ds1302_burst_init()
   58          {
-  59   1              unsigned char i = 0;
-  60   1              for (; i < 7; i++)
-  61   1              {
-  62   2                      buf[i] = ds1302_read_byte(read_cmd[i]);
-  63   2              }
-  64   1      }
-  65          
-  66          void ds1302_write_byte(unsigned char cmd, unsigned char dat)
-  67          {
-  68   1              CE = 0;
-  69   1              SCLK = 0;
-  70   1              CE = 1;
-  71   1              spi_write_byte(cmd);
-  72   1              spi_write_byte(dat);
-  73   1              CE = 0;
-  74   1      }
+  59   1              unsigned char read_protect_code[5];
+  60   1              ds1302_write_byte(write_cmd[7], 0x00);//关闭写保护
+  61   1              ds1302_write_byte(write_cmd[8], 0xA5);//充电，0xAA两个二极管，4K电阻    0xA5 一个二极管，2K电阻
+  62   1              ds1302_burst_read_ram(read_protect_code, protect_code_len);////0xC1 读取ram中的保护字
+  63   1              if(!check_protect_code(protect_code, read_protect_code, protect_code_len))
+  64   1              {               
+  65   2                      ds1302_burst_write_ram(protect_code, protect_code_len); //向ram中写入保护字
+  66   2                      ds1302_burst_write(time_buf); //初始化时间
+  67   2              }
+  68   1              else
+  69   1              {
+  70   2                      ds1302_write_byte(write_cmd[7], time_buf[7]);//打开写保护
+  71   2              }       
+  72   1      }
+  73          
+  74          
   75          
-  76          unsigned char ds1302_read_byte(unsigned char cmd)
-  77          {
-  78   1              unsigned char dat;
-  79   1              IO = 0;//要加这句，不然读出的数据一次正常，一次不正常，读出0x7f,网上说他们读出oxff。
-  80   1              //https://bbs.csdn.net/topics/390207271
-  81   1              CE = 0;
-  82   1              SCLK = 0;
-  83   1              CE = 1;
-  84   1              spi_write_byte(cmd);
-  85   1              dat = spi_read_byte();
-  86   1              CE = 0;
-  87   1      
-  88   1              return dat;
-  89   1      }
-  90          
-  91          //burst模式，一次性写入8字节，命令是0xBE. buf[7]必须是0x80，以打开写保护
-  92          //此函数不会关闭写保护，但会打开写保护，在调用此函数前需要手动关闭写保护
-  93          void ds1302_burst_write(unsigned char* buf)
-  94          {
-  95   1              unsigned char i = 0;
-  96   1              CE = 0;
-  97   1              SCLK = 0;
-  98   1              CE = 1;
-  99   1              spi_write_byte(BURST_WRITE);//burst写命令
- 100   1              for(; i < 8; i++)
- 101   1              {
- 102   2                      spi_write_byte(buf[i]); //最后一次循环打开写保护
- 103   2              }
- 104   1              CE = 0;
- 105   1      }
- 106          
- 107          
- 108          
- 109          void ds1302_burst_read(unsigned char* buf)
- 110          {
- 111   1              unsigned char i = 0;
- 112   1              CE = 0;
- 113   1              SCLK = 0;
- 114   1              CE = 1;
- 115   1              spi_write_byte(BURST_READ);//burst读命令
-C51 COMPILER V9.60.0.0   DS1302                                                            12/13/2020 19:12:21 PAGE 3   
+  76          
+  77          void ds1302_read(unsigned char* buf)
+  78          {
+  79   1              unsigned char i = 0;
+  80   1              for (; i < 7; i++)
+  81   1              {
+  82   2                      buf[i] = ds1302_read_byte(read_cmd[i]);
+  83   2              }
+  84   1      }
+  85          
+  86          void ds1302_write_byte(unsigned char cmd, unsigned char dat)
+  87          {
+  88   1              CE = 0;
+  89   1              SCLK = 0;
+  90   1              CE = 1;
+  91   1              spi_write_byte(cmd);
+  92   1              spi_write_byte(dat);
+  93   1              CE = 0;
+  94   1      }
+  95          
+  96          unsigned char ds1302_read_byte(unsigned char cmd)
+  97          {
+  98   1              unsigned char dat;
+  99   1              IO = 0;//要加这句，不然读出的数据一次正常，一次不正常，读出0x7f,网上说他们读出oxff。
+ 100   1              //https://bbs.csdn.net/topics/390207271
+ 101   1              CE = 0;
+ 102   1              SCLK = 0;
+ 103   1              CE = 1;
+ 104   1              spi_write_byte(cmd);
+ 105   1              dat = spi_read_byte();
+ 106   1              CE = 0;
+ 107   1      
+ 108   1              return dat;
+ 109   1      }
+ 110          
+ 111          //burst模式，一次性写入8字节，命令是0xBE. buf[7]必须是0x80，以打开写保护
+ 112          //此函数不会关闭写保护，但会打开写保护，在调用此函数前需要手动关闭写保护
+ 113          void ds1302_burst_write(unsigned char* buf)
+ 114          {
+ 115   1              unsigned char i = 0;
+C51 COMPILER V9.60.0.0   DS1302                                                            12/16/2020 21:49:36 PAGE 3   
 
- 116   1              for(; i < 8; i++)
- 117   1              {
- 118   2                      buf[i] = spi_read_byte();
- 119   2              }
- 120   1              CE = 0;
- 121   1              IO = 0;//要加这句，不然读出的数据一次正常，一次不正常，读出0x7f,网上说他们读出oxff。
- 122   1      }
- 123          
- 124          
- 125          unsigned char read1302(unsigned char add)
- 126          {
- 127   1              unsigned char i, dat, dat1;
- 128   1              SCLK = 0;
- 129   1              CE = 0;
- 130   1              CE = 1;
- 131   1              for(i = 0; i < 8; i++)
- 132   1              {
- 133   2                      IO = add&0x01;
- 134   2                      add>>=1;
- 135   2                      SCLK = 1;
- 136   2                      SCLK = 0;
- 137   2              }
- 138   1              for(i = 0; i < 8; i++)
- 139   1              {
- 140   2                      dat1 = IO;
- 141   2                      dat = (dat>>1)|(dat1<<7);
- 142   2                      SCLK = 1;
- 143   2                      SCLK = 0;
- 144   2              }
- 145   1              CE = 0;
- 146   1              IO = 0;
- 147   1              return dat;
- 148   1      }
+ 116   1              CE = 0;
+ 117   1              SCLK = 0;
+ 118   1              CE = 1;
+ 119   1              spi_write_byte(BURST_WRITE);//burst写命令
+ 120   1              for(; i < 8; i++)
+ 121   1              {
+ 122   2                      spi_write_byte(buf[i]); //最后一次循环打开写保护
+ 123   2              }
+ 124   1              CE = 0;
+ 125   1      }
+ 126          
+ 127          
+ 128          
+ 129          void ds1302_burst_read(unsigned char* buf)
+ 130          {
+ 131   1              unsigned char i = 0;
+ 132   1              CE = 0;
+ 133   1              SCLK = 0;
+ 134   1              CE = 1;
+ 135   1              spi_write_byte(BURST_READ);//burst读命令
+ 136   1              for(; i < 8; i++)
+ 137   1              {
+ 138   2                      buf[i] = spi_read_byte();
+ 139   2              }
+ 140   1              CE = 0;
+ 141   1              IO = 0;//要加这句，不然读出的数据一次正常，一次不正常，读出0x7f,网上说他们读出oxff。
+ 142   1      }
+ 143          
+ 144          void ds1302_burst_write_ram(unsigned char* buf, unsigned char write_len)
+ 145          {
+ 146   1              unsigned char i = 0;
+ 147   1              CE = 0;
+ 148   1              SCLK = 0;
+ 149   1              CE = 1;
+ 150   1              spi_write_byte(BURST_WRITE_RAM);//burst ram写命令
+ 151   1              for(; i < write_len; i++)
+ 152   1              {
+ 153   2                      spi_write_byte(buf[i]); //最后一次循环打开写保护
+ 154   2              }
+ 155   1              CE = 0;
+ 156   1      }
+ 157          
+ 158          void ds1302_burst_read_ram(unsigned char* buf, unsigned char read_len)
+ 159          {
+ 160   1              unsigned char i = 0;
+ 161   1              IO = 0;//要加这句，不然读出的数据一次正常，一次不正常，读出0x7f,网上说他们读出oxff。
+ 162   1              CE = 0;
+ 163   1              SCLK = 0;
+ 164   1              CE = 1;
+ 165   1              spi_write_byte(BURST_READ_RAM);//burst ram读命令
+ 166   1              for(; i < read_len; i++)
+ 167   1              {
+ 168   2                      buf[i] = spi_read_byte();
+ 169   2              }
+ 170   1              CE = 0;
+ 171   1              IO = 0;//要加这句，不然读出的数据一次正常，一次不正常，读出0x7f,网上说他们读出oxff。
+ 172   1      }
+ 173          
+ 174          
+ 175          unsigned char read1302(unsigned char add)
+ 176          {
+ 177   1              unsigned char i, dat, dat1;
+C51 COMPILER V9.60.0.0   DS1302                                                            12/16/2020 21:49:36 PAGE 4   
+
+ 178   1              SCLK = 0;
+ 179   1              CE = 0;
+ 180   1              CE = 1;
+ 181   1              for(i = 0; i < 8; i++)
+ 182   1              {
+ 183   2                      IO = add&0x01;
+ 184   2                      add>>=1;
+ 185   2                      SCLK = 1;
+ 186   2                      SCLK = 0;
+ 187   2              }
+ 188   1              for(i = 0; i < 8; i++)
+ 189   1              {
+ 190   2                      dat1 = IO;
+ 191   2                      dat = (dat>>1)|(dat1<<7);
+ 192   2                      SCLK = 1;
+ 193   2                      SCLK = 0;
+ 194   2              }
+ 195   1              CE = 0;
+ 196   1              IO = 0;
+ 197   1              return dat;
+ 198   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    412    ----
-   CONSTANT SIZE    =     17    ----
+   CODE SIZE        =    628    ----
+   CONSTANT SIZE    =     21    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     16      14
+   DATA SIZE        =     17      41
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.
